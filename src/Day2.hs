@@ -27,8 +27,4 @@ test = [[5,9,2,8],
 part1 = sum $ map (\xs -> maximum xs - minimum xs) input
 part2 = sum $ map (sum . pairs) input
 
-pairs l = [ if evenlyDiv x y then (if x>y then x `div` y else y `div` x) else 0 | (x:xs) <- tails l, y <- xs]
-
-evenlyDiv x y
-    | x < y = y `rem` x == 0
-    | otherwise = x `rem` y == 0
+pairs l = [ if x `mod` y == 0 then x `div` y else 0 | (x:xs) <- tails l, y <- xs]
