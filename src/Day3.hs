@@ -5,7 +5,8 @@ import Data.List
 input = 325489
 
 part1 = (manhatten . snd) <$> findArr input
-part2 = last $ takeWhile (\xs -> all (<= input) $ map fst xs) $ mkSums
+part2 = fst $ last $ mkSums !! index
+    where index = length $ last $ takeWhile (\xs -> all (<= input) $ map fst xs) $ mkSums
 
 
 circ = map (\(d,(x,y)) -> (zip (map (+ offset d) [2..(d +(d-1)*3)]) $ mkMoves d (x,y)))
