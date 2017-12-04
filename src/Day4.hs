@@ -2,13 +2,9 @@ module Day4 where
 
 import Data.List
 
-part1 = length $ filter (== 0) $ map (sum . map ((-) 1. length) . group . sort . words) input
-part2 = length $ filter (== 0) $ map (sum . map ((-) 1. length) . concatMap (groupBy anagramEq) . map permutations . words) input
+part1 = length $ filter (\l -> nub l == l) $ map words input
+part2 = length $ filter (\l -> nubBy (\a b -> sort a == sort b) l == l) $ map words input
 
-anagramEq xs ys = ys `elem` permutations xs
-anagramComp xs ys
-    | anagramEq xs ys = EQ
-    | otherwise =  compare xs ys
 input = ["kvvfl kvvfl olud wjqsqa olud frc",
     "slhm rdfm yxb rsobyt rdfm",
     "pib wzfr xyoakcu zoapeze rtdxt rikc jyeps wdyo hawr xyoakcu hawr",

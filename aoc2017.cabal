@@ -16,7 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   ghc-options:         -Wall
-  exposed-modules:     Day1
+  exposed-modules:     Day4
   build-depends:       base >= 4.7 && < 5
                      , data-aviary 
                      , trifecta
