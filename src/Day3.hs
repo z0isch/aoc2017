@@ -4,12 +4,10 @@ import Data.List
 
 input = 325489
 
-part1 = (manhatten . snd) <$> findArr input
-part2 = fst $ last $ mkSums !! index
-    where index = length $ last $ takeWhile (\xs -> all (<= input) $ map fst xs) $ mkSums
+part1 = manhatten $ snd $ findArr input
+part2 = fst $ last $ findSum input
 
-
-circ = map (\(d,(x,y)) -> (zip (map (+ offset d) [2..(d +(d-1)*3)]) $ mkMoves d (x,y)))
+circ = concatMap (\(d,(x,y)) -> (zip (map (+ offset d) [2..(d +(d-1)*3)]) $ mkMoves d (x,y)))
     $ zip [3,5..]
     $ map (\x -> (x+1,-x)) [0..]
     where 
@@ -17,9 +15,10 @@ circ = map (\(d,(x,y)) -> (zip (map (+ offset d) [2..(d +(d-1)*3)]) $ mkMoves d 
         offset x = (x-2) + ((x-3)*3) - 1 + offset (x-2)
         
 
-findArr x = find (\(d,_) -> d == x) $ last $ takeWhileInclusive (\xs -> x `notElem` map fst xs) circ
+findArr x = last $ takeWhileInclusive (\p -> x /= fst p) circ
+findSum x = mkSums !! (length $ last $ takeWhile (\xs -> all (<= x) $ map fst xs) $ mkSums)
 
-mkSums = scanl (\xs c -> xs ++ [(getSumOfNeighbors xs c, c)]) [(1,(0,0))] $ map snd $ concat circ
+mkSums = scanl (\xs c -> xs ++ [(getSumOfNeighbors xs c, c)]) [(1,(0,0))] $ map snd $ circ
 
 getSumOfNeighbors xs c = sum $ map fst $ intersectBy (\(_,c1) (_,c2) -> c1 == c2) xs $ zip (repeat 0) $ neighbors c
 
