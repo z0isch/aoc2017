@@ -5,8 +5,26 @@ import Control.Monad.Trans.Class
 import Data.List
 import Control.Monad
 
+import Control.Monad.ST
+import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as M
+
 part1 = evalState (step (+1)) (0,mkInput input)
 part2 = evalState (step (\i -> if i >= 3 then i -1 else i+1)) (0,mkInput input)
+part2' = calcNumSteps (\i -> if i >= 3 then i -1 else i+1) (mkInput input)
+
+calcNumSteps :: (Int -> Int) -> [Int] -> Int
+calcNumSteps f inp = runST $ do
+    n <- V.thaw nums 
+    goNext 0 0 n
+    where 
+        nums = V.fromList inp
+        goNext c i v
+            | i < 0 || i >= M.length v = return c
+            | otherwise = do
+                val <- M.read v i
+                M.write v i $ f val
+                goNext (c + 1) (i + val) v
 
 step :: (Int -> Int) -> State (Int,[Int]) Integer
 step f = go 0
