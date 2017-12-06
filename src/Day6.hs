@@ -5,7 +5,7 @@ import qualified Data.Map.Strict as M
 import Data.List
 
 part1 = (+) (-2) $ length $ takeWhileInclusive (all (<=1) . M.elems) $ solve $ map read $ words input
-part2 = (+) (- part1) $ (+) (-2) $ length $ takeWhileInclusive (all (<=2) . M.elems) $ solve $ map read $ words input
+part2 = length $ takeWhileInclusive (all (<=2) . M.elems) $ drop (part1 + 2) $ solve $ map read $ words input
 
 solve :: [Int] -> [Map [Int] Integer]
 solve = scanl (flip $ M.alter foo) M.empty . iterate doStep
