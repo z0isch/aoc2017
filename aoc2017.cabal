@@ -22,6 +22,7 @@ library
                      , trifecta
                      , transformers
                      , vector
+                     , containers
   default-language:    Haskell2010
 
 executable aoc2017-exe
