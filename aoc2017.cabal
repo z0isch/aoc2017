@@ -23,6 +23,7 @@ library
                      , transformers
                      , vector
                      , containers
+                     , recursion-schemes
   default-language:    Haskell2010
 
 executable aoc2017-exe
