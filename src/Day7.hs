@@ -6,10 +6,12 @@ module Day7 where
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH
 import Text.Trifecta
-import Data.Map.Strict (Map)
+import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.List
+import Data.Function
+import Control.Monad.Free
 
 data Input = Input Prog [String]
     deriving (Eq, Show)
@@ -30,12 +32,49 @@ part1 = head <$> diff
         bottoms = nub . concatMap (\(Input _ xs) -> xs) <$> inp
         allInputs = map (\(Input (Prog x _) _) -> x) <$> inp
         inp = parseInput input
-       
-mkMap :: [Input] -> Map Prog [String]
-mkMap = foldl' (\m (Input p ss) -> M.insertWith (++) p ss m) M.empty 
 
-mkTower :: Map Prog [String] -> TowerF a a
-mkTower m = LeafF (Prog "" 1)
+part2 = head $ filter (not.null) $ filter (not.allTheSame) $ M.elems $ fmap (\xs -> map (\x -> sums M.! x) xs) m 
+    where
+        sums = M.fromList $ cata sumOfChildrenAlg tower
+        tower :: Tower a
+        tower = ana mkTower m
+        (Success m) = mkMap <$> parseInput test
+
+allTheSame :: Eq a => [a] -> Bool
+allTheSame [] = True
+allTheSame [x] = True
+allTheSame (x:y:ys) = x == y && allTheSame ys
+
+mkMap :: [Input] -> Map Prog [Prog]
+mkMap xs = progMap
+    where
+        sMap =  foldl' (\m (Input p@(Prog s _) _) -> M.insert s p m) M.empty xs
+        progMap = foldl' (\m (Input p ss) -> M.insertWith (++) p (map findProg ss) m) M.empty xs
+        findProg p = fromJust $ M.lookup p sMap
+
+mkTower :: Map Prog [Prog] -> TowerF a (Map Prog [Prog])
+mkTower m
+    | null deps = LeafF top
+    | otherwise = NodeF top $ map removeOthers deps
+    where
+        removeOthers x = foldl' (flip M.delete) topTree (deps \\ [x])
+        topTree = M.filterWithKey (\k _ -> inTree m top k) m
+        deps = m ! top
+        top = maximumBy (compare `on` (height m)) $ M.keys m \\ bottoms
+        bottoms = nub $ concat $ M.elems m
+
+inTree :: Map Prog [Prog] -> Prog -> Prog -> Bool
+inTree m a b
+    | null deps = False
+    | b `elem` deps = True
+    | otherwise = any (\c -> inTree m c b) deps
+    where deps = m ! a
+
+height :: Map Prog [Prog] -> Prog -> Int
+height m p = go p 0 (m ! p)
+    where
+        go _ x [] = x
+        go p' x ps = maximum $ map (go p' (x+1) . (\t -> m ! t)) ps
 
 sumOfChildrenAlg :: TowerF a [(Prog,Int)]-> [(Prog,Int)]
 sumOfChildrenAlg (NodeF p@(Prog _ r) f) = (p, r + sum (map snd (concat f))):concat f
