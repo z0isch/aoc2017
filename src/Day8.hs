@@ -34,14 +34,15 @@ parseInput :: String -> Result [Inst]
 parseInput = parseString (some (instParser <* skipOptional newline)) mempty
 
 evalOp :: Map String Integer -> Reg -> Op -> Integer -> Bool
-evalOp m r o i = case o of
-    NE -> valR2 /= i
-    LE -> valR2 <= i
-    GE -> valR2 >= i
-    (Order EQ) -> valR2 == i
-    (Order LT) -> valR2 < i
-    (Order GT) -> valR2 > i
-    where  
+evalOp m r o = f valR2
+    where
+        f = case o of
+            NE -> (/=)
+            LE -> (<=)
+            GE -> (>=)
+            (Order EQ) -> (==)
+            (Order LT) -> (<)
+            (Order GT) -> (>)
         valR2 = M.findWithDefault 0 r m
 
 evalInst :: Map String Integer -> Inst -> Map String Integer
