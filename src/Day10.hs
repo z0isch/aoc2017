@@ -1,5 +1,6 @@
 module Day10 where
 
+import Control.Monad
 import Control.Monad.ST
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as M
@@ -27,10 +28,10 @@ hash inp xs = runST $ do
         go ix curr skip v
             | ix == length xs = V.freeze v >>= return . V.toList
             | otherwise = do
-                mapM_ (uncurry (M.swap v)) skips
+                zipWithM_ (M.swap v) (halfOf range) (halfOf $ reverse range)
                 go (ix + 1) ((curr + size + skip) `mod` length inp) (skip + 1) v 
             where
-                skips = take (length range `div` 2) $ zip range (reverse range)
+                halfOf = take (length range `div` 2)
                 range
                     | curr + size < length inp = [curr..(curr+size - 1)]
                     | otherwise = [curr..(length inp -1)] ++ [0..(size - ((length inp + 1) - curr))]
