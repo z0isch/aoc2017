@@ -4,10 +4,20 @@ import Control.Monad.ST
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as M
 import Text.Trifecta
+import Data.Char
+import Data.List.Split
+import Data.Bits
+import Data.List
+import Numeric
 
 part1 = hash [0..255] m 
     where (Success m) = parseString inputP mempty input
-part2 = undefined
+part2 = concatMap hexRep $ map xord $ chunksOf 16 $ hash [0..255] $ concat $ replicate 64 $ (++ [17, 31, 73, 47, 23]) $ map ord input
+    where 
+        hexRep x
+            | length (showHex x "") == 1 = "0" ++ showHex x ""
+            | otherwise = showHex x ""
+        xord (x:xs) = foldl' xor x xs
 
 hash :: [Int] -> [Int] -> [Int]
 hash inp xs = runST $ do
