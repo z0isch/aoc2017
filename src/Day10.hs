@@ -14,13 +14,16 @@ part1 :: [Int]
 part1 = hash [0..255] $ parseInput input
 
 part2 :: String
-part2 = concatMap (hexRep . xord) $ chunksOf 16 $ hash [0..255] $ concat $ replicate 64 $ (++ [17, 31, 73, 47, 23]) $ map ord input
+part2 = knotHash input
+
+knotHash :: String -> String
+knotHash s = concatMap (hexRep . xord) $ chunksOf 16 $ hash [0..255] $ concat $ replicate 64 $ (++ [17, 31, 73, 47, 23]) $ map ord s
     where 
         hexRep x
             | length (showHex x "") == 1 = "0" ++ showHex x ""
             | otherwise = showHex x ""
         xord (x:xs) = foldl' xor x xs
-
+        
 hash :: [Int] -> [Int] -> [Int]
 hash inp xs = runST $ do
     n <- V.thaw $ V.fromList inp
