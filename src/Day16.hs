@@ -6,27 +6,65 @@ import Data.List
 import Data.Maybe
 import Text.Trifecta
 import Control.Applicative
+import Control.Monad
+import Control.Monad.ST
+import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as MV
+import qualified Data.Set as S
+import Control.Monad.Primitive
 
 data Move = Spin Int | Exchange Int Int | Partner Char Char
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
-part1 = map fst $ sortOn snd $ M.toList $ foldl' mkMove programs mvs
+part1 = map fst $ sortOn snd $ M.toList $ doPass programs mvs
     where (Success mvs) = parseInput input
-part2 =  map fst $ sortOn snd $ M.toList $ foldl' mkMove programs (concat $ replicate 1000000000 mvs)
+
+part2' x = runST $ do
+    n <- V.thaw $ V.fromList "abcdefghijklmnop"
+    mapM_ (mkMove' n) (concat $ replicate x mvs)
+    V.toList <$> V.freeze n
     where (Success mvs) = parseInput input
+
+part2 = map fst $ sortOn snd $ M.toList $ doPass programs (concat $ replicate repeatX mvs)
+    where
+        repeatX = 1000000000 `rem` (repeatOn - 1)
+        repeatOn = length $ takeWhile (not . snd) $ scanl' (\(s,b) i -> (S.insert i s, S.member i s)) (S.empty,False) inter 
+        inter = map fst . sortOn snd . M.toList <$> scanl doPass programs (repeat mvs)
+        (Success mvs) = parseInput input
+
+doPass :: Map Char Int -> [Move] -> Map Char Int
+doPass = foldl' mkMove
 
 programs :: Map Char Int
 programs = M.fromList $ zip "abcdefghijklmnop" [0..]
 
+mkMove' :: PrimMonad m => MV.MVector (PrimState m) Char -> Move -> m ()
+mkMove' m (Spin 16) = return ()
+mkMove' m (Spin i) = do
+    v <- V.freeze m
+    let (x,y) = V.splitAt (16 - (i`mod`16)) v
+    V.copy m ((V.++) y x)
+mkMove' m (Exchange x y) 
+    | x == y = return ()
+    | otherwise = MV.unsafeSwap m x y
+mkMove' m (Partner a b) 
+    | a == b = return ()
+    | otherwise = do
+        v <- V.freeze m
+        let (Just x) = V.findIndex (a ==) v
+            (Just y) = V.findIndex (b ==) v
+        MV.unsafeSwap m x y
+        
 mkMove :: Map Char Int -> Move -> Map Char Int
 mkMove m mv = case mv of
+    Spin 16 -> m
     Spin i -> fmap (\i' -> (i' + i) `mod` M.size m ) m
-    Exchange x y -> mkMove m $ Partner a b
+    Exchange x y -> if x == y then m else mkMove m $ Partner a b
         where 
             l = M.elems m
-            b = "abcdefghijklmnop" !! (fromJust $ elemIndex y l)
-            a = "abcdefghijklmnop" !! (fromJust $ elemIndex x l)
-    Partner a b -> M.adjust (const $ m ! a) b $ M.adjust (const $ m ! b) a m
+            b = "abcdefghijklmnop" !! fromJust (elemIndex y l)
+            a = "abcdefghijklmnop" !! fromJust (elemIndex x l)
+    Partner a b -> if a == b then m else M.insert b (m ! a) $ M.insert a (m ! b) m
 
 parseInput :: String -> Result [Move]
 parseInput = parseString (sepBy1 moveP (char ',')) mempty

@@ -1,13 +1,13 @@
 module Day15 where
 
-import Numeric
 import Data.Bits
-import Data.Char
 
 part1 = length $ filter agree $ take 40000000 $ tail $ iterate next input
 part2 = length $ filter agree $ take 5000000 $ tail $ iterate next2 input
 
+nextX :: Int -> Int
 nextX x = 16807 * x `mod` 2147483647
+nextY :: Int -> Int
 nextY y = 48271 * y `mod` 2147483647
 
 next :: (Int,Int) -> (Int,Int)

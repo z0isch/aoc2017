@@ -4,4 +4,5 @@ packages:
 - .
 extra-deps:
 - data-aviary-0.4.0
+- memoize-0.8.1
 resolver: lts-9.14
