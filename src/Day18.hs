@@ -62,18 +62,15 @@ runP ::
   -> Chan Integer
   -> IORef (Integer, Map Char Integer, Integer, Bool)
   -> IO ()
-runP inst t1 t2 s = checkAndGo
+runP inst t1 t2 s = go
   where
-    checkAndGo = go >> do
-      (_,_,_,t) <- readIORef s
-      when t checkAndGo
     go = do
-      (idx,rs,snds,_) <- readIORef s
-      if idx >= 0 && idx < genericLength inst
-        then doInst' t1 t2 s (inst `genericIndex` idx)
-        else do
-          writeIORef s (idx,rs,snds,False)
-          return ()
+      (idx,rs,snds,t) <- readIORef s
+      when t $ do
+        void $ if idx >= 0 && idx < genericLength inst
+          then doInst' t1 t2 s (inst `genericIndex` idx)
+          else writeIORef s (idx,rs,snds,False)
+        go
 
 doInst' :: Chan Integer -> Chan Integer -> IORef (Integer, Map Char Integer, Integer, Bool) -> Inst -> IO ()
 doInst' mine theirs v inst = do
