@@ -15,11 +15,13 @@ import Control.Monad
 import qualified Control.Exception.Base as E
 
 type RegOrInt = Either Char Integer
+
 data Inst = Snd RegOrInt | Set Char RegOrInt | Add Char RegOrInt | Mul Char RegOrInt | Mod Char RegOrInt | Rcv Char | Jgz RegOrInt RegOrInt
   deriving (Eq,Show)
 
 part1 = (\(_,_,x:_,_) -> x) $ last $ takeWhile (\(_,_,_,x) -> x) $ iterate (next i) (0,mempty,[],True)
   where (Success i) = parseInput input
+
 part2 = do
   q1 <- newChan
   q2 <- newChan
