@@ -62,10 +62,11 @@ runP ::
   -> Chan Integer
   -> IORef (Integer, Map Char Integer, Integer, Bool)
   -> IO ()
-runP inst t1 t2 s = go >> do
-  (_,_,_,t) <- readIORef s
-  unless (not t) $ runP inst t1 t2 s
-  where 
+runP inst t1 t2 s = checkAndGo
+  where
+    checkAndGo = go >> do
+      (_,_,_,t) <- readIORef s
+      unless (not t) checkAndGo
     go = do
       (idx,rs,snds,t) <- readIORef s
       unless (not t) $ 
