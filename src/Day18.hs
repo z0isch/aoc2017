@@ -23,13 +23,13 @@ part1 = (\(_,_,x:_,_) -> x) $ last $ takeWhile (\(_,_,_,x) -> x) $ iterate (next
 part2 = do
   q1 <- newChan
   q2 <- newChan
-  t1 <- newIORef (0,M.singleton 'p' 0,0,True)
-  t2 <- newIORef (0,M.singleton 'p' 1,0,True)
+  t1 <- newIORef (0,M.singleton 'p' 0,0)
+  t2 <- newIORef (0,M.singleton 'p' 1,0)
   let (Success i) = parseInput input
       r1 = runP i q1 q2 t1
       r2 = runP i q2 q1 t2
       readVars = (,) <$> readIORef t1 <*> readIORef t2
-  (_,(_,_,r,_)) <- E.catch (concurrently r1 r2 >> readVars) $ \E.BlockedIndefinitelyOnMVar -> readVars
+  (_,(_,_,r)) <- E.catch (concurrently r1 r2 >> readVars) $ \E.BlockedIndefinitelyOnMVar -> readVars
   return r
 
 val :: Map Char Integer -> RegOrInt -> Integer
@@ -60,33 +60,27 @@ runP ::
   [Inst]
   -> Chan Integer
   -> Chan Integer
-  -> IORef (Integer, Map Char Integer, Integer, Bool)
+  -> IORef (Integer, Map Char Integer, Integer)
   -> IO ()
-runP inst t1 t2 s = go
+runP inst mine theirs v = go
   where
     go = do
-      (idx,rs,snds,t) <- readIORef s
-      when t $ do
-        void $ if idx >= 0 && idx < genericLength inst
-          then doInst' t1 t2 s (inst `genericIndex` idx)
-          else writeIORef s (idx,rs,snds,False)
-        go
-
-doInst' :: Chan Integer -> Chan Integer -> IORef (Integer, Map Char Integer, Integer, Bool) -> Inst -> IO ()
-doInst' mine theirs v inst = do
-  (idx, rs, snds,t) <- readIORef v
-  case inst of
-    Snd x -> writeChan theirs (val rs x) >> writeIORef v (idx+1, rs, snds+1,t)
-    Set x y -> writeIORef v (idx+1,M.alter (const $ Just (val rs y)) x rs,snds,t)
-    Add x y -> writeIORef v (idx+1,M.alter (\m -> Just (val rs y + fromMaybe 0 m)) x rs,snds,t)
-    Mul x y -> writeIORef v (idx+1,M.alter (\m -> Just (val rs y * fromMaybe 0 m)) x rs,snds,t)
-    Mod x y -> writeIORef v (idx+1,M.alter (\m -> Just (fromMaybe 0 m `mod` val rs y)) x rs,snds,t)
-    Rcv x -> do
-      q <- readChan mine
-      writeIORef v (idx+1,M.alter (const $ Just q) x rs,snds,t)
-    Jgz x y 
-      | val rs x > 0 -> writeIORef v (val rs y+idx,rs,snds,t)
-      | otherwise -> writeIORef v (idx+1,rs,snds,t)
+      (idx,rs,snds) <- readIORef v
+      when (idx >= 0 && idx < genericLength inst) $ doStep (idx, rs, snds) (inst `genericIndex` idx)
+      go
+      where
+        doStep (idx,rs,snds) = \case
+            Snd x -> writeChan theirs (val rs x) >> writeIORef v (idx+1, rs, snds+1)
+            Set x y -> writeIORef v (idx+1,M.alter (const $ Just (val rs y)) x rs,snds)
+            Add x y -> writeIORef v (idx+1,M.alter (\m -> Just (val rs y + fromMaybe 0 m)) x rs,snds)
+            Mul x y -> writeIORef v (idx+1,M.alter (\m -> Just (val rs y * fromMaybe 0 m)) x rs,snds)
+            Mod x y -> writeIORef v (idx+1,M.alter (\m -> Just (fromMaybe 0 m `mod` val rs y)) x rs,snds)
+            Rcv x -> do
+              q <- readChan mine
+              writeIORef v (idx+1,M.alter (const $ Just q) x rs,snds)
+            Jgz x y 
+              | val rs x > 0 -> writeIORef v (val rs y+idx,rs,snds)
+              | otherwise -> writeIORef v (idx+1,rs,snds)
 
 parseInput :: String -> Result [Inst]
 parseInput = parseString (some (instP <* skipOptional newline)) mempty
