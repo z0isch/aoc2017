@@ -66,8 +66,8 @@ runP inst mine theirs v = go
   where
     go = do
       (idx,rs,snds) <- readIORef v
-      when (idx >= 0 && idx < genericLength inst) $ doStep (idx, rs, snds) (inst `genericIndex` idx)
-      go
+      when (idx >= 0 && idx < genericLength inst) $ 
+        doStep (idx, rs, snds) (inst `genericIndex` idx) >> go
       where
         doStep (idx,rs,snds) = \case
             Snd x -> writeChan theirs (val rs x) >> writeIORef v (idx+1, rs, snds+1)
