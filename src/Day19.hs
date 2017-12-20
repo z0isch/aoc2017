@@ -44,16 +44,16 @@ getLtr (Letter c) = [c]
 getLtr _ = ""
 
 step :: CoordMap -> (Coord,[Coord],Set (Coord,Direction)) -> (Coord,[Coord],Set (Coord,Direction))
-step m (curr,(lastSeen:ls),seen) = (curr',curr:lastSeen:ls,seen')
+step m (curr,lastSeen:ls,seen) = (curr',curr:lastSeen:ls,seen')
   where 
-    p = m ! curr
     curr'
       | canKeepGoing = inSameDir
-      | otherwise = head $ filter (not . oppositeDir (dir lastSeen curr) . dir curr) ns
+      | otherwise = head ns
     seen' = S.insert (curr, dir lastSeen curr) seen
     inSameDir = move curr $ dir lastSeen curr
     canKeepGoing = inSameDir `elem` ns
-    ns = filter (\c -> (c,dir curr c) `S.notMember` seen && c `M.member` m) $ neighbors curr
+    backward = oppositeDir (dir lastSeen curr) . dir curr
+    ns = filter (\c -> (c,dir curr c) `S.notMember` seen && c `M.member` m && not (backward c)) $ neighbors curr
 
 oppositeDir :: Direction -> Direction -> Bool
 oppositeDir U D = True
