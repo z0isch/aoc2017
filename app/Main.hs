@@ -1,13 +1,13 @@
 module Main where
 
-import Day19
+import Day20
 import Criterion.Main
 
 main = print part2
 -- main :: IO ()
 -- main = defaultMain 
 --   [ bgroup ""
---     [ bench "part2" $ nf (const part2) undefined
---     , bench "part2'" $ nf (const part2') undefined
+--     [ bench "part1" $ nf (const part1) undefined
+--     , bench "part1'" $ nf (const part1') undefined
 --     ]
 --   ]
