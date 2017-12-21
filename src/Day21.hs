@@ -17,13 +17,16 @@ type Image = (Int,[V2 Int])
 type Box = (V2 Int, V2 Int)
 
 t::Image
-t = (4,[V2 0 0,V2 3 0,V2 0 (-3),V2 3 (-3)])
+t = (6,[V2 0 0,V2 1 0,V2 0 (-1),V2 3 0,V2 4 0,V2 3 (-1),V2 0 (-3),V2 1 (-3),V2 0 (-4),V2 3 (-3),V2 4 (-3),V2 3 (-4)])
 
 part1 = iterate (step recipes) start
     
 part2 = undefined
 
 recipes = let (Success rs) = parseInput test in rs
+
+printBox :: (Box, Image) -> IO ()
+printBox ((sv,_),img) = printImage $ translate img (negate sv)
 
 printImage :: Image -> IO ()
 printImage (b,ons) = mapM_ putStrLn bar
@@ -34,6 +37,7 @@ printImage (b,ons) = mapM_ putStrLn bar
 step :: Map Image Image -> Image -> Image
 step rs imgs = collide (length divides) $ map (snd . (\((sv,_),im@(b,_)) -> (b+1, translate (findRecipe im sv) (goBack sv)))) divides
   where
+    --fix me!
     goBack (V2 x y) = V2 (if x == 0 then 0 else x +1) (if y == 0 then 0 else y-1)
     findRecipe im sv = rs ! translate im (negate sv)
     divides = divide imgs
