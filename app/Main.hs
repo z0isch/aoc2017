@@ -1,6 +1,6 @@
 module Main where
 
-import Day20
+import Day21
 import Criterion.Main
 
 main = print part2
