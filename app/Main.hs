@@ -1,9 +1,9 @@
 module Main where
 
-import Day20
+import Day25
 import Criterion.Main
 
-main = print part2
+main = print part1
 -- main :: IO ()
 -- main = defaultMain 
 --   [ bgroup ""
