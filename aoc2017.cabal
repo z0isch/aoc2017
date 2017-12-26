@@ -41,6 +41,7 @@ library
                      , linear
                      , parallel
                      , lens
+                     , deriving-compat
   default-language:    Haskell2010
 
 executable aoc2017-exe
