@@ -26,6 +26,7 @@ library
                      , Day21
                      , Day22
                      , Day23
+                     , Day25
   build-depends:       base >= 4.7 && < 5
                      , data-aviary 
                      , trifecta
@@ -44,8 +45,9 @@ library
                      , linear
                      , parallel
                      , lens
-                     , unordered-containers
                      , hashable
+                     , deriving-compat
+                     , unordered-containers
   default-language:    Haskell2010
 
 executable aoc2017-exe
