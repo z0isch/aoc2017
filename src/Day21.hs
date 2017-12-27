@@ -48,8 +48,8 @@ step :: HashMap Image Image -> Image -> Image
 step rs img@(Image b0 _) = collided
   where
     !collided = collide b' $ map getNext $ zip [0..] divides
-    b' = floor $ sqrt $ fromIntegral $ length divides * l * l
-    l = 1 + head divides ^. _2.size
+    !b' = floor $ sqrt $ fromIntegral $ length divides * l * l
+    !l = 1 + head divides ^. _2.size
     getNext (i,((sv,_),im@(Image b _))) = set size (b+1) replaced
       where
         replaced = translate (rs ! translate im (negate sv)) (sv ^+^ offset)
@@ -57,7 +57,7 @@ step rs img@(Image b0 _) = collided
         xMv = i `rem` boxesPerRow
         yMv = i `div` boxesPerRow
         offset = V2 xMv (-yMv)
-    divides = divide img
+    !divides = divide img
 
 collide :: Int -> [Image] -> Image
 collide b' = Image b' . S.unions . map (view ons)

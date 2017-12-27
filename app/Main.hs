@@ -1,10 +1,10 @@
 module Main where
 
-import Day21
+import Day23
 import Criterion.Main
 import Control.Parallel.Strategies
 
-main = print part2
+main = print part1
 -- main :: IO ()
 -- main = defaultMain 
 --   [ bgroup ""

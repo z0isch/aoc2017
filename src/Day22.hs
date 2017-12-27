@@ -65,14 +65,14 @@ step' (VirusState i w fl p f nI) = VirusState i' w' fl' p' f' nI'
     isInfected = p `S.member` i
     isWeakened = p `S.member` w
     isFlagged = p `S.member` fl
-    p' = move f' p
+    !p' = move f' p
     (!i',!w',!fl') 
       | isInfected = (S.delete p i, w, S.insert p fl)
       | isWeakened = (S.insert p i, S.delete p w, fl)
       | isFlagged = (i, w, S.delete p fl)
       | otherwise = (i, S.insert p w, fl)
-    nI' = if isWeakened then nI+1 else nI
-    f'
+    !nI' = if isWeakened then nI+1 else nI
+    !f'
       | isInfected = turn R f 
       | isWeakened = f
       | isFlagged = reverseDir f
