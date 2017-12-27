@@ -9,7 +9,7 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            var a = Day1.Part1(Day1.input);
+            Day23.Part2();
         }
     }
 }

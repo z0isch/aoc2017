@@ -14,23 +14,32 @@ import Data.List
 import qualified Data.Vector as V
 import Data.Char
 import Control.Monad.Primitive
+import qualified Data.HashSet as H
 
 type RegOrInt = Either Char Int
 
 data Inst = Set Char RegOrInt | Sub Char RegOrInt | Mul Char RegOrInt | Jgz RegOrInt RegOrInt
   deriving (Eq,Show)
   
-part1 = undefined
-part2 = undefined
+part1 = runST $ runP i $ UV.fromList (replicate 8 0)
+  where
+    (Success i) = parseInput input
+part2 = 1 + (122700 - 105700) `div` 17 - numPrimes
+  where numPrimes = length $ filter (`H.member` vals) $ takeWhile (<= 122700) $ dropWhile (<= 105700) primes
+        vals :: H.HashSet Int
+        vals = H.fromList $ takeWhile (<= 122700) [105700,(105700+17)..]
+        primes = 2 : primes'
+          where isPrime (p:ps) n = p*p > n || n `rem` p /= 0 && isPrime ps n
+                primes' = 3 : filter (isPrime primes') [5, 7 ..]
 
-runP :: PrimMonad m => V.Vector Inst -> MV.MVector (PrimState m) Int -> m (Int, [Inst])
-runP inst rs = do
-  rs <- UV.thaw $ UV.fromList (replicate 8 0)
-  go rs (0,mempty)
+runP :: PrimMonad m => V.Vector Inst -> UV.Vector Int -> m (Int, Int)
+runP inst st = do
+  rs <- UV.thaw st
+  go rs (0,0)
   where
     go rs (idx,snds)
       | idx >= 0 && idx < fromIntegral (V.length inst) = do
-        !nxt <- doInst rs (idx,snds) ((V.!) inst (fromIntegral idx))
+        nxt@(!x,!y) <- doInst rs (idx,snds) ((V.!) inst (fromIntegral idx))
         go rs nxt
       | otherwise = return (idx,snds)
 
@@ -42,27 +51,27 @@ val m = \case
   Left c -> MV.read m (charToIndex c)
   Right i -> return i
 
-doInst :: PrimMonad m => MV.MVector (PrimState m) Int -> (Int, [Inst]) -> Inst -> m (Int, [Inst])
+doInst :: PrimMonad m => MV.MVector (PrimState m) Int -> (Int, Int) -> Inst -> m (Int, Int)
 doInst rs (idx, snds) = \case
   Set x y -> do
     vy <- val rs y
     MV.write rs (charToIndex x) vy 
-    return (idx+1,Set x y:snds)
+    return (idx+1,snds)
   Sub x y -> do
     vy <- val rs y
-    MV.modify rs (\m -> vy - m) (charToIndex x)
-    return (idx+1,Sub x y:snds)
+    MV.modify rs (\m -> m - vy) (charToIndex x)
+    return (idx+1,snds)
   Mul x y -> do
     vy <- val rs y
-    MV.modify rs (\m -> vy * m) (charToIndex x)
-    return (idx+1,Mul x y:snds)
+    MV.modify rs (* vy) (charToIndex x)
+    return (idx+1,snds + 1)
   Jgz x y -> do
     vx <- val rs x
-    if vx > 0
+    if vx /= 0
     then do
       vy <- val rs y
-      return (vy+idx,Jgz x y:snds)
-    else return (idx+1,Jgz x y:snds)
+      return (vy+idx,snds)
+    else return (idx+1,snds)
 
 parseInput :: String -> Result (V.Vector Inst)
 parseInput = parseString (V.fromList <$> some (instP <* skipOptional newline)) mempty
@@ -75,7 +84,7 @@ instP = try setP <|> try addP <|> try mulP <|> jgzP
     regOrInt = try (Left <$> letter) <|> (Right . fromIntegral <$> integer)
     setP = (\_ x y -> Set x y) <$> cmd "set" <*> token letter <*> regOrInt
     addP = (\_ x y -> Sub x y) <$> cmd "sub" <*> token letter <*> regOrInt
-    mulP = (\_ x y -> Mul x y) <$> cmd  "mul" <*> token letter <*> regOrInt
+    mulP = (\_ x y -> Mul x y) <$> cmd "mul" <*> token letter <*> regOrInt
     jgzP = (\_ x y -> Jgz x y) <$> cmd "jnz" <*> token regOrInt <*> regOrInt
 
 test=""
