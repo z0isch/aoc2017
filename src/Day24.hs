@@ -31,7 +31,7 @@ treeCoalg x
     where xs = getNext x
 
 longestStrongest :: [Component] -> Int
-longestStrongest cs = snd $ maximumBy longestThenStrongest $ hylo alg treeCoalg(cs,(0,0))
+longestStrongest cs = snd $ maximumBy longestThenStrongest $ hylo alg treeCoalg (cs,(0,0))
     where
         longestThenStrongest (l,s) (l',s')
             | l == l' = compare s s'
@@ -45,16 +45,10 @@ strongest cs = maximum $ hylo alg treeCoalg (cs,(0,0))
     where
         alg :: TreeF Component [Int] -> [Int]
         alg (LeafF (x,y)) = [x + y]
-        alg (NodeF (x,y) ls) = concatMap (map ((+) (x+y))) ls
+        alg (NodeF (x,y) ls) = concatMap (map ((x+y) +)) ls
 
 getNext :: ([Component],Component) -> [([Component],Component)]
-getNext (cs,s@(_,y)) = do
-    (x',y') <- cs
-    if (x' == y) 
-    then [(delete (x',y') cs, (x',y'))]
-    else if (y' == y)
-        then [(delete (x',y') cs, (y',x'))]
-        else []
+getNext (cs,(_,y)) = [(delete (x',y') cs, if x'== y then (x',y') else (y',x')) | (x',y') <- cs, x' == y || y' == y]
 
 strength :: [Component] -> Int
 strength = sum . map (sumOf both)

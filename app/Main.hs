@@ -1,14 +1,14 @@
 module Main where
 
-import Day23
+import Day21
 import Criterion.Main
 import Control.Parallel.Strategies
 
-main = print part2
--- main :: IO ()
+main :: IO ()
+main = print part2'
 -- main = defaultMain 
 --   [ bgroup ""
---     [ bench "part1" $ nf (const part2) undefined
---     --, bench "part1'" $ nf (const part2) (parMap rpar)
+--     [ bench "part2" $ nf (const part2) undefined
+--     , bench "part2'" $ nf (const part2') (parMap rpar)
 --     ]
 --   ]

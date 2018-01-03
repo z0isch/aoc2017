@@ -16,6 +16,9 @@ import qualified Data.HashSet as S
 import Control.Lens
 import Control.Parallel.Strategies hiding (dot)
 import Data.Hashable
+import Data.Foldable
+import Data.Monoid
+import Data.List
 
 data Image = Image 
   { _size :: Int
@@ -28,8 +31,12 @@ instance Hashable Image where
 
 type Box = (V2 Int, V2 Int)
 
+printStep i = printImage $ last $ take i $ iterate (step recipes) start
+printStep' i = printImage $ snd $ last $ take i $ iterate step' (recipes,start)
+part1' = S.size $ view ons $ snd $ last $ take 6 $ iterate step' (recipes, start)
 part1 = S.size $ view ons $ last $ take 6 $ iterate (step recipes) start
-part2 = S.size $ view ons $ last $ take 19 $ iterate (step recipes) start
+part2 = S.size $ view ons $ last $ take 14 $ iterate (step recipes) start
+part2' = S.size $ view ons $ snd $ last $ take 19 $ iterate step' (recipes, start)
 recipes = let (Success rs) = parseInput input in rs
 
 printRecipes :: HashMap Image Image -> IO ()
@@ -47,9 +54,9 @@ printImage (Image b ons) = mapM_ putStrLn bar
 step :: HashMap Image Image -> Image -> Image
 step rs img@(Image b0 _) = collided
   where
+    divInto = if b0 `mod` 2 == 0 then 2 else 3
     !collided = collide b' $ map getNext $ zip [0..] divides
-    !b' = floor $ sqrt $ fromIntegral $ length divides * l * l
-    !l = 1 + head divides ^. _2.size
+    !b' = (divInto + 1) * (b0 `div` divInto)
     getNext (i,((sv,_),im@(Image b _))) = set size (b+1) replaced
       where
         replaced = translate (rs ! translate im (negate sv)) (sv ^+^ offset)
@@ -62,9 +69,52 @@ step rs img@(Image b0 _) = collided
 collide :: Int -> [Image] -> Image
 collide b' = Image b' . S.unions . map (view ons)
 
-divide :: Image -> [(Box, Image)]
-divide (Image s vs) = parMap rpar (\b -> (b, Image divInto $ S.filter (inBox b) vs)) (divBoxes s)
+step' :: (HashMap Image Image, Image) -> (HashMap Image Image, Image)
+step' (rs,img) = (M.union rs' rs'',collided)
+  where
+    divInto = if img^.size `mod` 2 == 0 then 2 else 3
+    rs' = foldl' (\r i -> M.insert i collided r) rs (perms img)
+    !collided = collide b' divides  
+    b' = (divInto + 1) * (img^.size `div` divInto)
+    (!rs'',!divides) = divide' rs img
+
+divide' :: HashMap Image Image -> Image -> (HashMap Image Image, [Image])
+divide' rs i@(Image s _) = over _1 (fromMaybe rs) $ over _2 (map snd) $ go (V2 0 0) (V2 0 0, V2 (s-1) (1-s)) i
+  where
+    divInto = if s `mod` 2 == 0 then 2 else 3
+    go v b@(sb,_) i' = case memod of
+      Just m -> (Nothing,[(b,translate m (sb ^+^ v))])
+      Nothing -> (Just rs'',i'')
+      where
+        baseImg = translate i' (negated sb)
+        memod = M.lookup baseImg rs        
+        newImgSize = (divInto + 1) * (i'^.size `div` divInto)  
+        i'' = concatMap snd ds
+        rs' = M.unions $ mapMaybe fst ds
+        collided = translate (collide newImgSize (map snd i'')) (negated (sb ^+^ v))
+        rs'' = foldl' (\r im -> M.insert im collided r) rs' (perms baseImg)
+        ds = parMap rpar smaller $ zip vs boxes
+        smaller (v', b') = go v' b' $ Image boxSize $ S.filter (inBox b') (i'^.ons)
+        boxSize = let divided = (i'^.size) `div` divInto
+                  in if divided `mod` divInto == 0
+                     then divided
+                     else divInto
+        numBoxes = (i'^.size) `div` boxSize
+        boxes = map (over both (^+^ sb)) $ divBoxes' boxSize numBoxes
+        numPerBox = boxSize `div` divInto
+        vs = concatMap (\y -> map ((v ^+^) . (\x -> V2 (x*numPerBox) ((-y)*numPerBox))) [0..(numBoxes-1)]) [0..(numBoxes-1)]
+        
+divBoxes' :: Int -> Int -> [Box]
+divBoxes' s num = concatMap (\y -> map (\x -> over both (^+^ V2 (x*s) (-y*s)) b) pts) pts
   where 
+    pts = [0..num-1]
+    b = (V2 0 0, V2 (s-1) (1-s))
+
+divide :: Image -> [(Box, Image)]
+divide (Image s vs) = parMap rpar foo (divBoxes s)
+  where
+    foo b =  (b, Image divInto (intoBox b))
+    intoBox b = S.filter (inBox b) vs
     divInto = if s `mod` 2 == 0 then 2 else 3
 
 divBoxes :: Int -> [Box]
